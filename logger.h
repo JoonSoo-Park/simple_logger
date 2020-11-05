@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdio>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <random>
@@ -93,7 +94,21 @@ logger::~logger()
 
 logger& logger::operator<< (std::string msg)
 {
-    logfile << msg << '\n';
+    std::time_t now = time(0);
+    std::tm* Itm = localtime(&now);
+
+    std::stringstream ss;
+    ss << "[" << 1900 + Itm->tm_year 
+       << "-" << 1 + Itm->tm_mon 
+       << "-" << Itm->tm_mday << " ";
+
+    ss << Itm->tm_hour << ":" 
+       << Itm->tm_min << ":" 
+       << Itm->tm_sec << "] ";
+
+    ss << msg << '\n';
+
+    logfile << ss.str();
     return *this;
 }
 
