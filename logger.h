@@ -20,27 +20,27 @@ namespace uuid_generator{
     static std::mt19937 gen(rd());
     static std::uniform_int_distribution<int> distrib(0, 15);
 
-    std::string generate_uuid()
+    std::string generate_short_uuid()
     {
         std::stringstream ss;
 
         ss << std::uppercase << std::hex;
-        for (int i = 0; i < 8; ++i) {
-            ss << distrib(gen);
-        }
-
-        ss << "-";
         for (int i = 0; i < 4; ++i) {
             ss << distrib(gen);
         }
 
         ss << "-";
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < 3; ++i) {
             ss << distrib(gen);
         }
 
         ss << "-";
-        for (int i = 0; i < 12; ++i) {
+        for (int i = 0; i < 3; ++i) {
+            ss << distrib(gen);
+        }
+
+        ss << "-";
+        for (int i = 0; i < 1; ++i) {
             ss << distrib(gen);
         }
 
@@ -61,35 +61,48 @@ class logger
 {
 public:
     logger();
+    logger(std::string);
     ~logger(); 
-
-    int persist(const char*);
+    logger(const logger&) = delete;
+    logger& operator=(const logger&) = delete;
     logger& operator<<(std::string);
 private:
     std::string name;
     std::string logpath;
     std::ofstream logfile;
+    void open_path();
 };
 
 logger::logger()
 {
     using namespace uuid_generator;
 
-    name = generate_uuid();
-    std::string cur_work_dir = get_current_working_directory();
+    name = generate_short_uuid() + ".txt";
 
-    // logpath = log file path in current directory
-    logpath = cur_work_dir + "/" + name + ".tmp";
-    std::cout << "Temp file name: " << logpath << std::endl;
-    
-    // open file for write|truncate
-    logfile.open(logpath.c_str(), std::ios::out | std::ios::trunc);
+    open_path();
+}
+
+logger::logger(std::string new_name) : name(new_name)
+{
+    open_path();
 }
 
 // close opened logfile
 logger::~logger()
 {
     if(logfile.is_open()) logfile.close();
+}
+
+void logger::open_path()
+{
+    std::string cur_work_dir = get_current_working_directory();
+
+    // logpath = log file path in current directory
+    logpath = cur_work_dir + "/" + name;
+    std::cout << "Temp file name: " << logpath << std::endl;
+    
+    // open file for write|truncate
+    logfile.open(logpath.c_str(), std::ios::out | std::ios::app);
 }
 
 logger& logger::operator<< (std::string msg)
@@ -110,15 +123,6 @@ logger& logger::operator<< (std::string msg)
 
     logfile << ss.str();
     return *this;
-}
-
-int logger::persist(const char* new_path)
-{
-    logfile.close();
-    std::string temp = std::string(new_path) + "/" + name + ".txt";
-    std::rename(logpath.c_str(), temp.c_str());
-
-    return 1;
 }
 
 std::string get_current_working_directory()
